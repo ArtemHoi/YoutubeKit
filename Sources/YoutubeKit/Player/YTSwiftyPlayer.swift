@@ -38,6 +38,56 @@ open class YTSwiftyPlayer: WKWebView {
     open private(set) var currentVideoURL: String?
     
     open private(set) var currentVideoEmbedCode: String?
+    
+    open private(set) var playerHtml: String? = """
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000000; }
+    </style>
+</head>
+<body>
+    <div id="player"></div>
+    <div id="explain"></div>
+    <script src="https://www.youtube.com/iframe_api" onerror="webkit.messageHandlers.onYouTubeIframeAPIFailedToLoad.postMessage('')"></script>
+    <script>
+        var player;
+        var time;
+        YT.ready(function() {
+                 player = new YT.Player('player', %@);
+                 webkit.messageHandlers.onYouTubeIframeAPIReady.postMessage('');
+                 function updateTime() {
+                     var state = player.getPlayerState();
+                     if (state == YT.PlayerState.PLAYING) {
+                        time = player.getCurrentTime();
+                        webkit.messageHandlers.onUpdateCurrentTime.postMessage(time);
+                     }
+                 }
+                 window.setInterval(updateTime, 500);
+                 });
+                 function onReady(event) {
+                     webkit.messageHandlers.onReady.postMessage('');
+                 }
+    function onStateChange(event) {
+        webkit.messageHandlers.onStateChange.postMessage(event.data);
+    }
+    function onPlaybackQualityChange(event) {
+        webkit.messageHandlers.onPlaybackQualityChange.postMessage(event.data);
+    }
+    function onPlaybackRateChange(event) {
+        webkit.messageHandlers.onPlaybackRateChange.postMessage(event.data);
+    }
+    function onPlayerError(event) {
+        webkit.messageHandlers.onError.postMessage(event.data);
+    }
+    function onApiChange(event) {
+        webkit.messageHandlers.onApiChange.postMessage(event.data);
+    }
+    </script>
+</body>
+</html>
+"""
 
     open private(set) var playerState: YTSwiftyPlayerState = .unstarted
     
@@ -220,8 +270,6 @@ open class YTSwiftyPlayer: WKWebView {
 
     public func loadPlayer() {
         let currentBundle = Bundle(for: YTSwiftyPlayer.self)
-        let path = currentBundle.path(forResource: "player", ofType: "html")!
-        let htmlString = try? String(contentsOfFile: path, encoding: String.Encoding.utf8)
         let events: [String: AnyObject] = {
             var registerEvents: [String: AnyObject] = [:]
             callbackHandlers.forEach {
@@ -243,7 +291,7 @@ open class YTSwiftyPlayer: WKWebView {
         
         guard let json = try? JSONSerialization.data(withJSONObject: parameters, options: []),
             let jsonString = String(data: json, encoding: String.Encoding.utf8),
-            let html = htmlString?.replacingOccurrences(of: "%@", with: jsonString),
+            let html = playerHtml?.replacingOccurrences(of: "%@", with: jsonString),
             let baseUrl = URL(string: "https://www.youtube.com") else { return }
         
         loadHTMLString(html, baseURL: baseUrl)
