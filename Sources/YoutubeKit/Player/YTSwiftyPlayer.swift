@@ -158,7 +158,22 @@ open class YTSwiftyPlayer: WKWebView {
     }
     
     required public init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        let config = YTSwiftyPlayer.defaultConfiguration
+        let userContentController = WKUserContentController()
+        config.userContentController = userContentController
+
+        super.init(coder: coder)
+
+        callbackHandlers.forEach {
+            userContentController.add(self, name: $0.rawValue)
+        }
+
+        commonInit()
+
+        guard !playerVars.isEmpty else { return }
+        var params: [String: AnyObject] = [:]
+     
+        self.playerVars = params
     }
     
     public func setPlayerParameters(_ parameters: [String: AnyObject]) {
