@@ -158,11 +158,11 @@ open class YTSwiftyPlayer: WKWebView {
     }
     
     required public init?(coder: NSCoder) {
-        let config = YTSwiftyPlayer.defaultConfiguration
         let userContentController = WKUserContentController()
-        config.userContentController = userContentController
-
+        
         super.init(coder: coder)
+        
+        self.configuration.userContentController = userContentController
 
         callbackHandlers.forEach {
             userContentController.add(self, name: $0.rawValue)
