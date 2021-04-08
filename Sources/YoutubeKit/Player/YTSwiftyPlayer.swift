@@ -166,9 +166,17 @@ open class YTSwiftyPlayer: WKWebView {
 
         commonInit()
 
-        guard !playerVars.isEmpty else { return }
+        let playerVars: [VideoEmbedParameter] = [
+            .playsInline(true),
+            .loopVideo(false),
+            .showInfo(false),
+            .showRelatedVideo(false)]
+        
         var params: [String: AnyObject] = [:]
-     
+        playerVars.forEach {
+            let property = $0.property
+            params[property.key] = property.value
+        }
         self.playerVars = params
     }
     
